@@ -1,0 +1,125 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+      "MyVPC": {
+        "Type": "AWS::EC2::VPC",
+        "Properties": {
+          "CidrBlock": "10.0.0.0/16",
+          "EnableDnsSupport": true,
+          "EnableDnsHostnames": true,
+          "InstanceTenancy": "default",
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": "MyVPC"
+            }
+          ]
+        }
+      },
+      "MyInternetGateway": {
+        "Type": "AWS::EC2::InternetGateway",
+        "Properties": {
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": "MyInternetGateway"
+            }
+          ]
+        }
+      },
+      "MyVPCGatewayAttachment": {
+        "Type": "AWS::EC2::VPCGatewayAttachment",
+        "Properties": {
+          "VpcId": { "Ref": "MyVPC" },
+          "InternetGatewayId": { "Ref": "MyInternetGateway" }
+        }
+      },
+      "MySecurityGroup": {
+        "Type": "AWS::EC2::SecurityGroup",
+        "Properties": {
+          "GroupDescription": "Allow all inbound and outbound traffic",
+          "VpcId": { "Ref": "MyVPC" },
+          "SecurityGroupIngress": [
+            {
+              "CidrIp": "0.0.0.0/0",
+              "IpProtocol": "-1"
+            }
+          ],
+          "SecurityGroupEgress": [
+            {
+              "CidrIp": "0.0.0.0/0",
+              "IpProtocol": "-1"
+            }
+          ]
+        }
+      },
+      "MyPublicSubnet": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "VpcId": { "Ref": "MyVPC" },
+          "CidrBlock": "10.0.1.0/24",
+          "AvailabilityZone": "us-west-2a",
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": "MyPublicSubnet"
+            }
+          ]
+        }
+      },
+      "MyRouteTable": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+          "VpcId": { "Ref": "MyVPC" }
+        }
+      },
+      "MyRoute": {
+        "Type": "AWS::EC2::Route",
+        "DependsOn": "MyInternetGateway",
+        "Properties": {
+          "RouteTableId": { "Ref": "MyRouteTable" },
+          "DestinationCidrBlock": "0.0.0.0/0",
+          "GatewayId": { "Ref": "MyInternetGateway" }
+        }
+      },
+      "MySubnetAssociation": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": { "Ref": "MyPublicSubnet" },
+          "RouteTableId": { "Ref": "MyRouteTable" }
+        }
+      },
+      "MyEC2Instance": {
+        "Type": "AWS::EC2::Instance",
+        "Properties": {
+          "ImageId": "ami-093467ec28ae4fe03",
+          "InstanceType": "t2.micro",
+          "KeyName": "USER-KP",
+          "SubnetId": { "Ref": "MyPublicSubnet" },
+          "SecurityGroupIds": [{ "Ref": "MySecurityGroup" }]
+        }
+      },
+      "MyLoadBalancer": {
+        "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+        "Properties": {
+          "Subnets": [{ "Ref": "MyPublicSubnet" }],
+          "Listeners": [
+            {
+              "LoadBalancerPort": "80",
+              "InstancePort": "80",
+              "Protocol": "HTTP"
+            }
+          ],
+          "SecurityGroups": [{ "Ref": "MySecurityGroup" }],
+          "HealthCheck": {
+            "Target": "HTTP:80/",
+            "HealthyThreshold": "2",
+            "UnhealthyThreshold": "5",
+            "Interval": "30",
+            "Timeout": "5"
+          }
+        }
+      }
+    }
+  }
+  
