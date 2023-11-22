@@ -94,9 +94,14 @@
         "Properties": {
           "ImageId": "ami-093467ec28ae4fe03",
           "InstanceType": "t2.micro",
-          "KeyName": "USER-KP",
-          "SubnetId": { "Ref": "MyPublicSubnet" },
-          "SecurityGroupIds": [{ "Ref": "MySecurityGroup" }]
+          "KeyName": "KP2",
+          "NetworkInterfaces": [{
+            "AssociatePublicIpAddress": "True",
+            "DeleteOnTermination": "True",
+            "SubnetId": { "Ref": "MyPublicSubnet" },
+            "DeviceIndex": "0",
+            "GroupSet": [{ "Ref": "MySecurityGroup" }]
+          }]
         }
       },
       "MyLoadBalancer": {
